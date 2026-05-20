@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 <meta charset="utf-8">
 
@@ -14,21 +15,45 @@ body {
 
 model-viewer {
   width: 100vw;
-  height: 100vh;
+  height: 90vh;
 }
 </style>
 </head>
 
 <body>
 
+<select id="modelSelect">
+
+<option value="models/ea510ce736104fbbb5f63a47f235a4a3.glb">
+Temple
+</option>
+
+<option value="models/64b4fa034a8d4a3fb39a68a894889502.glb">
+Pottery
+</option>
+
+</select>
+
 <model-viewer
-src="64b4fa034a8d4a3fb39a68a894889502.glb"
+id="viewer"
+src="models/ea510ce736104fbbb5f63a47f235a4a3.glb"
 camera-controls
-camera-orbit="180deg -90deg"
-auto-rotate
-shadow-intensity="1"
-ar>
+auto-rotate>
 </model-viewer>
+
+<script>
+
+const viewer =
+document.getElementById('viewer');
+
+document.getElementById('modelSelect')
+.addEventListener('change', function() {
+
+viewer.src = this.value;
+
+});
+
+</script>
 
 </body>
 </html>
