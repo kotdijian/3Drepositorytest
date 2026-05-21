@@ -30,3 +30,5 @@ Google [<model-viewer>](https://modelviewer.dev/) で構築されています
 #### 追加的機能
 - プルダウンメニューによるモデル選択
 - プルダウンメニューによる言語選択（日本語・英語）
+
+[test page (Hida Sekibo)](https://kotdijian.github.io/3Drepositorytest/)
