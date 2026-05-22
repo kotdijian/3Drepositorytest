@@ -9,6 +9,9 @@
 src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
 </script>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <style>
 body {
   margin: 0;
@@ -30,10 +33,27 @@ model-viewer {
 
 #info-area {
   width: 30%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+}
+
+#text-panel {
+  height: 60%;
   padding: 20px;
   overflow-y: auto;
-  background: #f5f5f5;
   box-sizing: border-box;
+}
+
+#map-panel {
+  height: 40%;
+  border-top: 1px solid #ccc;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
 }
 
 label {
@@ -98,17 +118,25 @@ p {
 
 <div id="info-area">
 
-  <label for="languageSelect">Language</label>
-  <select id="languageSelect">
-    <option value="ja">日本語</option>
-    <option value="en">English</option>
-  </select>
+  <div id="text-panel">
 
-  <label for="modelSelect">Model</label>
-  <select id="modelSelect"></select>
+    <label for="languageSelect">Language</label>
+    <select id="languageSelect">
+      <option value="ja">日本語</option>
+      <option value="en">English</option>
+    </select>
 
-  <div id="description">
-    <p>CSVデータを読み込み中です。</p>
+    <label for="modelSelect">Model</label>
+    <select id="modelSelect"></select>
+
+    <div id="description">
+      <p>CSVデータを読み込み中です。</p>
+    </div>
+
+  </div>
+
+  <div id="map-panel">
+    <div id="map"></div>
   </div>
 
 </div>
@@ -121,6 +149,15 @@ const description = document.getElementById("description");
 
 let models = [];
 let currentLanguage = "ja";
+
+const map = L.map("map").setView([36.32, 137.13], 10);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap contributors"
+}).addTo(map);
+
+let marker = L.marker([36.32, 137.13]).addTo(map);
 
 fetch("DDB.csv")
   .then(response => {
@@ -150,7 +187,11 @@ function setupModelSelector(models) {
   models.forEach(model => {
     const option = document.createElement("option");
     option.value = model.id;
-    option.textContent = model.label || model.id;
+    option.textContent =
+      model["label_" + currentLanguage] ||
+      model.label ||
+      model.id;
+
     modelSelect.appendChild(option);
   });
 }
@@ -158,8 +199,7 @@ function setupModelSelector(models) {
 function showModel(model) {
   viewer.src = model.file;
 
-  const lang = currentLanguage;
-  const suffix = "_" + lang;
+  const suffix = "_" + currentLanguage;
 
   description.innerHTML = `
     <h2>${escapeHTML(model["title" + suffix])}</h2>
@@ -209,6 +249,30 @@ function showModel(model) {
       </a>
     </p>
   `;
+
+  updateMap(model);
+}
+
+function updateMap(model) {
+  const lat = parseFloat(model.lat);
+  const lon = parseFloat(model.lon);
+  const zoom = parseInt(model.zoom || "13", 10);
+
+  if (Number.isNaN(lat) || Number.isNaN(lon)) {
+    console.warn("Latitude or longitude is missing:", model.id);
+    return;
+  }
+
+  marker.setLatLng([lat, lon]);
+  marker.bindPopup(
+    escapeHTML(model["title_" + currentLanguage] || model.label || model.id)
+  );
+
+  map.setView([lat, lon], zoom);
+
+  setTimeout(() => {
+    map.invalidateSize();
+  }, 100);
 }
 
 modelSelect.addEventListener("change", function() {
@@ -224,6 +288,12 @@ modelSelect.addEventListener("change", function() {
 
 languageSelect.addEventListener("change", function() {
   currentLanguage = this.value;
+
+  const currentModelId = modelSelect.value;
+
+  setupModelSelector(models);
+
+  modelSelect.value = currentModelId;
 
   const selected = models.find(model => model.id === modelSelect.value);
 
